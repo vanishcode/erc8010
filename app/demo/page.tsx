@@ -292,10 +292,10 @@ export default function DemoPage() {
               }
             >
               {currentStep > step.id ? (
-                <CheckCircle2 className="mr-1 h-3 w-3" />
+                <CheckCircle2 className="mr-.5 h-3 w-3" />
               ) : (
-                step.id
-              )}.
+                step.id + ". "
+              )}
               {step.label}
             </Badge>
             {i < STEPS.length - 1 && (
