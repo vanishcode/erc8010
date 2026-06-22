@@ -54,7 +54,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
           <LanguageSwitcher />
-          <AccountBadge />
+          {/* <AccountBadge /> */}
         </div>
       </div>
     </header>
