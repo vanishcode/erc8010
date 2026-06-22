@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { hashMessage, type Authorization, type Hex } from "viem";
 import {
   demoAccount,
@@ -261,6 +261,16 @@ export default function DemoPage() {
     }
   };
 
+  const autoPostVerifyRef = useRef(false);
+
+  // Auto-trigger post-delegation verification when Step 5 is reached
+  useEffect(() => {
+    if (txHash && !autoPostVerifyRef.current) {
+      autoPostVerifyRef.current = true;
+      handlePostVerify();
+    }
+  }, [txHash]);
+
   const copyToClipboard = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
     toast.success(t.demo.toast.copied(label));
@@ -279,19 +289,28 @@ export default function DemoPage() {
 
       {/* Step Progress */}
       <div className="mb-8 flex items-center gap-2 flex-wrap">
-        {STEPS.map((step, i) => (
+        {STEPS.map((step, i) => {
+          // Step 5 is "completed" when all three verifications pass
+          const isLastStep = step.id === 5;
+          const stepCompleted = currentStep > step.id || (
+            isLastStep &&
+            preVerifyResult === true &&
+            postVerifyResult === true &&
+            ecdsaVerifyResult === true
+          );
+          return (
           <div key={step.id} className="flex items-center gap-2">
             <Badge
               variant={currentStep === step.id ? "default" : "outline"}
               className={
-                currentStep > step.id
+                stepCompleted
                   ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
                   : currentStep === step.id
                     ? ""
                     : "opacity-50"
               }
             >
-              {currentStep > step.id ? (
+              {stepCompleted ? (
                 <CheckCircle2 className="mr-.5 h-3 w-3" />
               ) : (
                 step.id + ". "
@@ -302,7 +321,7 @@ export default function DemoPage() {
               <ChevronRight className="h-3 w-3 text-zinc-400 shrink-0" />
             )}
           </div>
-        ))}
+        )})}
       </div>
 
       {!isReady && (
@@ -530,7 +549,7 @@ export default function DemoPage() {
 
           <Button
             onClick={handlePreVerify}
-            disabled={!wrappedSig || preVerifyLoading}
+            disabled={!wrappedSig || preVerifyLoading || preVerifyResult === true}
             className="gap-2"
           >
             {preVerifyLoading ? (
@@ -538,7 +557,7 @@ export default function DemoPage() {
             ) : (
               <ShieldCheck className="h-4 w-4" />
             )}
-            {preVerifyResult === true ? t.demo.reverify : t.demo.verifyOffChain}
+            {preVerifyResult === true ? t.demo.verifiedButton : t.demo.verifyOffChain}
           </Button>
         </CardContent>
       </Card>
@@ -623,9 +642,13 @@ export default function DemoPage() {
               {t.demo.step5Title}
             </CardTitle>
             <Badge variant="secondary">
-              {postVerifyResult === true
+              {preVerifyResult === true &&
+              postVerifyResult === true &&
+              ecdsaVerifyResult === true
                 ? t.common.valid
-                : postVerifyResult === false
+                : preVerifyResult === false ||
+                  postVerifyResult === false ||
+                  ecdsaVerifyResult === false
                   ? t.common.failed
                   : t.common.pending}
             </Badge>
@@ -635,13 +658,6 @@ export default function DemoPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {postVerifyLoading && (
-            <div className="flex items-center gap-2 text-sm text-zinc-500">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t.demo.verifyingText}
-            </div>
-          )}
-
           {postVerifyResult === true && (
             <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -654,119 +670,6 @@ export default function DemoPage() {
             </Alert>
           )}
 
-          {postVerifyResult === false && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertTitle>{t.demo.failedPostTitle}</AlertTitle>
-            </Alert>
-          )}
-
-          {/* Comparison table */}
-          {preVerifyResult === true && postVerifyResult === true && (
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-zinc-50 dark:bg-zinc-900">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium">{t.demo.aspect}</th>
-                    <th className="px-4 py-2 text-left font-medium">
-                      {t.demo.preDelegation}
-                    </th>
-                    <th className="px-4 py-2 text-left font-medium">
-                      {t.demo.postDelegation}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-t border-zinc-200 dark:border-zinc-700">
-                    <td className="px-4 py-2 font-medium">{t.demo.path}</td>
-                    <td className="px-4 py-2">
-                      <Badge variant="outline" className="text-xs">
-                        {t.demo.erc8010Path}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge variant="outline" className="text-xs">
-                        {t.demo.erc1271Path}
-                      </Badge>
-                    </td>
-                  </tr>
-                  <tr className="border-t border-zinc-200 dark:border-zinc-700">
-                    <td className="px-4 py-2 font-medium">{t.demo.method}</td>
-                    <td className="px-4 py-2 text-xs">
-                      {t.demo.erc8010Method}
-                    </td>
-                    <td className="px-4 py-2 text-xs">
-                      {t.demo.erc1271Method}
-                    </td>
-                  </tr>
-                  <tr className="border-t border-zinc-200 dark:border-zinc-700">
-                    <td className="px-4 py-2 font-medium">{t.demo.result}</td>
-                    <td className="px-4 py-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 inline" />{" "}
-                      valid
-                    </td>
-                    <td className="px-4 py-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 inline" />{" "}
-                      valid
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <Button
-            onClick={handlePostVerify}
-            disabled={!txHash || postVerifyLoading}
-            className="gap-2"
-          >
-            {postVerifyLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ShieldCheck className="h-4 w-4" />
-            )}
-            {postVerifyResult === true ? t.demo.reverify : t.demo.verifyPostDelegate}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Summary */}
-      {postVerifyResult === true && (
-        <>
-          <Separator className="my-8" />
-          <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <AlertTitle className="text-green-700 dark:text-green-300 text-lg">
-              {t.demo.completeTitle}
-            </AlertTitle>
-            <AlertDescription className="text-green-600 dark:text-green-400">
-              {t.demo.completeDesc}
-            </AlertDescription>
-          </Alert>
-        </>
-      )}
-
-      {/* ECDSA Recovery Verification — third method, pure off-chain */}
-      <Separator className="my-8" />
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">
-              {t.demo.comparisonTitle}
-            </CardTitle>
-            <Badge variant="secondary">
-              {ecdsaVerifyResult === true
-                ? t.common.valid
-                : ecdsaVerifyResult === false
-                  ? t.common.failed
-                  : t.common.pending}
-            </Badge>
-          </div>
-          <CardDescription>
-            {t.demo.comparisonDesc}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
           {ecdsaVerifyLoading && (
             <div className="flex items-center gap-2 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -798,7 +701,7 @@ export default function DemoPage() {
 
           <Button
             onClick={handleEcdsaVerify}
-            disabled={!innerSig || ecdsaVerifyLoading}
+            disabled={!innerSig || ecdsaVerifyLoading || ecdsaVerifyResult === true}
             className="gap-2"
           >
             {ecdsaVerifyLoading ? (
@@ -807,8 +710,8 @@ export default function DemoPage() {
               <ShieldCheck className="h-4 w-4" />
             )}
             {ecdsaVerifyResult === true
-              ? t.demo.reverify
-              : t.demo.verifyEcdsa}
+              ? t.demo.verifiedButton
+              : t.demo.verify}
           </Button>
 
           {/* Three-way comparison table */}
@@ -909,6 +812,26 @@ export default function DemoPage() {
             )}
         </CardContent>
       </Card>
+
+      {/* Summary — shown after all three verification methods pass */}
+      {preVerifyResult === true &&
+        postVerifyResult === true &&
+        ecdsaVerifyResult === true && (
+        <>
+          <Separator className="my-8" />
+          <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <AlertTitle className="text-green-700 dark:text-green-300 text-lg">
+              {t.demo.completeTitle}
+            </AlertTitle>
+            <AlertDescription className="text-green-600 dark:text-green-400">
+              {t.demo.completeDesc}
+            </AlertDescription>
+          </Alert>
+        </>
+      )}
+
+{/* ECDSA comparison merged into Step 5 above */}
     </div>
   );
 }

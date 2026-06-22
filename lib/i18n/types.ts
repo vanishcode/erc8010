@@ -70,6 +70,7 @@ export interface Translations {
     failedTitle: string;
     failedDesc: string;
     reverify: string;
+    verifiedButton: string;
     verifyOffChain: string;
     step4Title: string;
     step4Desc: string;
@@ -94,6 +95,7 @@ export interface Translations {
     ecdsaSuccessDesc: string;
     ecdsaFailedTitle: string;
     ecdsaFailedDesc: string;
+    verify: string;
     verifyEcdsa: string;
     aspect: string;
     path: string;

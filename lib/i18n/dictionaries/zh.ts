@@ -88,6 +88,7 @@ export const zh: Translations = {
     failedDesc:
       "签名无法验证。请检查委托合约是否已部署，以及会话密钥是否已授权。",
     reverify: "重新验证",
+    verifiedButton: "已验证 ✓",
     verifyOffChain: "链下验证",
     step4Title: "步骤 4：执行链上委托",
     step4Desc:
@@ -119,6 +120,7 @@ export const zh: Translations = {
     ecdsaFailedTitle: "ECDSA 恢复失败",
     ecdsaFailedDesc:
       "恢复出的地址与演示账户不匹配。签名可能已损坏或由其他密钥签署。",
+    verify: "验证",
     verifyEcdsa: "使用 ECDSA 恢复验证",
     aspect: "维度",
     path: "路径",

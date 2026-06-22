@@ -89,6 +89,7 @@ export const en: Translations = {
     failedDesc:
       "The signature could not be verified. Check that the delegate contract is deployed and the session key is authorized.",
     reverify: "Re-verify",
+    verifiedButton: "Verified ✓",
     verifyOffChain: "Verify Off-Chain",
     step4Title: "Step 4: Execute Delegation On-Chain",
     step4Desc:
@@ -120,6 +121,7 @@ export const en: Translations = {
     ecdsaFailedTitle: "ECDSA recovery failed",
     ecdsaFailedDesc:
       "The recovered address does not match the demo account. The signature may be corrupted or signed by a different key.",
+    verify: "Verify",
     verifyEcdsa: "Verify with ECDSA Recovery",
     aspect: "Aspect",
     path: "Path",
